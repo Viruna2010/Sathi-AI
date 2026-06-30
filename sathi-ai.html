@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sathi AI - Pro Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans+Sinhala:wght@400;500;700&family=Noto+Sans+Tamil:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0f10; --bg-elev:#17181a; --bg-elev2:#1f2123; --border:#2a2d30;
+  --accent1:#5b8cff; --accent2:#e9678f; --accent3:#a786ff;
+  --text:#e8e9ea; --text-dim:#9a9ea3; --gold:#f2b01f;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Google Sans','Noto Sans Sinhala','Noto Sans Tamil',sans-serif;}
+body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
+.app-container{display:flex;width:100%;height:100vh;position:relative;}
+
+aside{width:280px;background:var(--bg-elev);display:flex;flex-direction:column;padding:16px;border-right:1px solid var(--border);transition:all .25s ease;z-index:5;}
+.new-chat-btn{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--accent1),var(--accent3));border:none;border-radius:24px;padding:13px 20px;color:#fff;font-weight:500;cursor:pointer;margin-bottom:20px;font-size:14px;width:fit-content;box-shadow:0 4px 14px rgba(91,140,255,.25);}
+.new-chat-btn:hover{filter:brightness(1.1);}
+.history-section{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+.history-section::-webkit-scrollbar{width:4px;}
+.history-section::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.history-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);padding:8px 12px;}
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;color:var(--text);cursor:pointer;font-size:14px;white-space:nowrap;overflow:hidden;position:relative;transition:background .15s;}
+.history-item:hover,.history-item.active{background:var(--bg-elev2);}
+.history-item span.title{flex:1;overflow:hidden;text-overflow:ellipsis;}
+.history-item input.rename-input{flex:1;background:#0e0f10;border:1px solid var(--accent1);border-radius:6px;color:#fff;padding:3px 6px;font-size:13px;}
+.icon-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;display:none;padding:2px;border-radius:4px;}
+.history-item:hover .icon-btn{display:flex;}
+.icon-btn:hover{color:#fff;}
+.icon-btn.delete:hover{color:#ea4335;}
+
+.sidebar-bottom{border-top:1px solid var(--border);padding-top:12px;margin-top:8px;display:flex;flex-direction:column;gap:6px;}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;color:var(--text-dim);cursor:pointer;font-size:13px;}
+.sidebar-link:hover{background:var(--bg-elev2);color:var(--text);}
+
+main{flex:1;display:flex;flex-direction:column;height:100vh;background:var(--bg);position:relative;}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);}
+.brand{font-size:20px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.menu-btn{color:var(--text-dim);cursor:pointer;margin-right:8px;display:none;}
+.auth-status{display:flex;align-items:center;gap:10px;}
+.owner-badge{background:linear-gradient(135deg,var(--gold),#f39c12);color:#131314;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:bold;display:flex;align-items:center;gap:4px;}
+.icon-only-btn{background:var(--bg-elev2);border:none;color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.icon-only-btn:hover{background:#2a2d30;}
+
+.chat-container{flex:1;overflow-y:auto;padding:24px 15%;display:flex;flex-direction:column;gap:28px;}
+.chat-container::-webkit-scrollbar{width:8px;}
+.chat-container::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.chat-row{display:flex;gap:16px;align-items:flex-start;max-width:850px;width:100%;margin:0 auto;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.user-avatar{background:var(--bg-elev2);color:#fff;font-weight:500;font-size:14px;}
+.ai-avatar{background:linear-gradient(135deg,var(--accent1),var(--accent2),var(--accent3));color:#fff;}
+.message-content{flex:1;font-size:15.5px;line-height:1.65;}
+.message-text-block{white-space:pre-wrap;margin-bottom:8px;}
+
+.code-container{background:#0a0a0b;border-radius:10px;border:1px solid var(--border);margin:14px 0;overflow:hidden;}
+.code-header{background:var(--bg-elev2);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-dim);border-bottom:1px solid var(--border);font-family:monospace;text-transform:uppercase;}
+.copy-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;border-radius:4px;}
+.copy-btn:hover{background:#2a2d30;color:#fff;}
+.code-container pre{padding:14px;margin:0;overflow-x:auto;}
+.code-container code{font-family:'Courier New',monospace;font-size:13.5px;}
+.inline-code{background:#252729;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:13.5px;color:var(--gold);}
+
+.footer-container{padding:14px 15% 22px;}
+.input-wrapper{max-width:850px;margin:0 auto;display:flex;align-items:center;background:var(--bg-elev);border:1px solid var(--border);border-radius:28px;padding:8px 8px 8px 18px;}
+#userInput{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15.5px;padding:8px;}
+#userInput::placeholder{color:var(--text-dim);}
+.send-btn{background:linear-gradient(135deg,var(--accent1),var(--accent3));border:none;color:#fff;cursor:pointer;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.send-btn:hover{filter:brightness(1.1);}
+
+.loading-stars{display:flex;gap:4px;padding-top:6px;}
+.star{width:7px;height:7px;background:linear-gradient(135deg,var(--accent1),var(--accent2));border-radius:50%;animation:blink 1.4s infinite both;}
+.star:nth-child(1){animation-delay:-.32s;} .star:nth-child(2){animation-delay:-.16s;}
+@keyframes blink{0%,80%,100%{transform:scale(0);opacity:.5;}40%{transform:scale(1);opacity:1;}}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+.modal-overlay.active{opacity:1;pointer-events:auto;}
+.modal-card{background:var(--bg-elev);padding:30px;border-radius:18px;width:100%;max-width:380px;border:1px solid var(--border);display:flex;flex-direction:column;gap:14px;}
+.modal-card h3{font-size:19px;font-weight:500;text-align:center;margin-bottom:6px;}
+.modal-card p.sub{font-size:12.5px;color:var(--text-dim);text-align:center;margin-top:-10px;margin-bottom:4px;}
+.modal-card input{background:#0e0f10;border:1px solid var(--border);border-radius:9px;padding:12px;color:#fff;font-size:14.5px;outline:none;}
+.modal-card input:focus{border-color:var(--accent1);}
+.modal-card button.primary{background:linear-gradient(135deg,var(--accent1),var(--accent3));border:none;color:#fff;padding:12px;border-radius:9px;font-size:14.5px;font-weight:500;cursor:pointer;margin-top:6px;}
+.modal-card button.primary:hover{filter:brightness(1.1);}
+.close-modal{text-align:center;color:var(--text-dim);font-size:13px;cursor:pointer;}
+.close-modal:hover{color:#fff;}
+
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px;}
+.setting-row label{font-size:14px;color:var(--text-dim);}
+.lang-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.lang-pill{border:1px solid var(--border);background:#0e0f10;color:var(--text);padding:10px;border-radius:10px;cursor:pointer;text-align:center;font-size:13.5px;}
+.lang-pill.active{border-color:var(--accent1);background:rgba(91,140,255,.12);color:#fff;}
+
+@media (max-width:768px){
+  aside{position:absolute;left:-280px;height:100%;}
+  aside.open{left:0;}
+  .menu-btn{display:block;}
+  .chat-container,.footer-container{padding-left:5%;padding-right:5%;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <aside id="sidebar">
+    <button class="new-chat-btn" onclick="startNewChat()"><span class="material-icons-outlined">add</span> <span id="t-newchat">New chat</span></button>
+    <div class="history-title" id="t-recent">Recent Chats</div>
+    <div class="history-section" id="chatList"></div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-link" onclick="openSettingsModal()"><span class="material-icons-outlined" style="font-size:18px;">settings</span> <span id="t-settings">Settings</span></div>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div style="display:flex;align-items:center;">
+        <span class="material-icons-outlined menu-btn" onclick="toggleSidebar()">menu</span>
+        <div class="brand">
+          <span class="material-icons-outlined" style="background:linear-gradient(135deg,var(--accent1),var(--accent2),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">auto_awesome</span>
+          Sathi AI
+        </div>
+      </div>
+      <div class="auth-status" id="authArea"></div>
+    </header>
+
+    <div class="chat-container" id="chatContainer"></div>
+
+    <div class="footer-container">
+      <div class="input-wrapper">
+        <input type="text" id="userInput" placeholder="Ask Sathi AI..." onkeypress="checkEnter(event)">
+        <button class="send-btn" onclick="sendMessage()"><span class="material-icons-outlined">send</span></button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Admin login modal: opened only via secret keyboard sequence, no visible button -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-card">
+    <h3 id="t-admintitle">Owner Authentication</h3>
+    <p class="sub" id="t-adminsub">Restricted access</p>
+    <input type="text" id="usernameInput" placeholder="Username" autocomplete="off">
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button class="primary" onclick="handleLogin()" id="t-loginbtn">Login</button>
+    <div class="close-modal" onclick="closeLoginModal()" id="t-cancel">Cancel</div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card">
+    <h3 id="t-settingstitle">Settings</h3>
+    <div>
+      <label style="font-size:13px;color:var(--text-dim);" id="t-langlabel">Language</label>
+      <div class="lang-grid" style="margin-top:8px;">
+        <div class="lang-pill" data-lang="si" onclick="setLanguage('si')">සිංහල</div>
+        <div class="lang-pill" data-lang="en" onclick="setLanguage('en')">English</div>
+        <div class="lang-pill" data-lang="ta" onclick="setLanguage('ta')">தமிழ்</div>
+        <div class="lang-pill" data-lang="sg" onclick="setLanguage('sg')">Singlish</div>
+      </div>
+    </div>
+    <div class="setting-row" id="ownerSettingsRow" style="display:none;">
+      <label id="t-displayname">Display name</label>
+      <input type="text" id="displayNameInput" placeholder="Viruna" style="max-width:140px;">
+    </div>
+    <button class="primary" onclick="saveSettings()" id="t-savebtn">Save</button>
+    <div class="close-modal" onclick="closeSettingsModal()" id="t-close">Close</div>
+  </div>
+</div>
+
+<script>
+// ===================== i18n =====================
+const STRINGS = {
+  si: { newchat:"නව කතාබස", recent:"මෑත කතාබස්", settings:"සැකසුම්", admintitle:"අයිතිකරු සත්‍යාපනය", adminsub:"සීමිත ප්‍රවේශය", loginbtn:"ඇතුල් වන්න", cancel:"අවලංගු කරන්න",
+    settingstitle:"සැකසුම්", langlabel:"භාෂාව", displayname:"නම පෙන්වන ආකාරය", savebtn:"සුරකින්න", close:"වසන්න",
+    welcome:"ආයුබෝවන්! මම Sathi AI. මම නිර්මාණය කළේ Viruna Randinu විසිනි. අද මම ඔබට උදව් කරන්නේ කෙසේද? ✨",
+    placeholder:"Sathi AI ගෙන් අහන්න...", ownerMode:"අයිතිකරු මාදිලිය සක්‍රියයි", logout:"ඉවත් වන්න", wrongCreds:"වැරදි දත්ත! ඔබ සත්‍ය අයිතිකරු නොවේ නම් කරුණාකර ඉවත් වන්න.",
+    networkErr:"⚠️ ජාල දෝෂයකි. සම්බන්ධතාවය නැතිවිය.", errOccurred:"⚠️ දෝෂයක් ඇතිවිය:" },
+  en: { newchat:"New chat", recent:"Recent Chats", settings:"Settings", admintitle:"Owner Authentication", adminsub:"Restricted access", loginbtn:"Login", cancel:"Cancel",
+    settingstitle:"Settings", langlabel:"Language", displayname:"Display name", savebtn:"Save", close:"Close",
+    welcome:"Hello! I'm Sathi AI, created by Viruna Randinu. How can I help you today? ✨",
+    placeholder:"Ask Sathi AI...", ownerMode:"Owner Mode Active", logout:"Logout", wrongCreds:"Incorrect credentials! Please leave if you are not the real owner.",
+    networkErr:"⚠️ Network error. Connection lost.", errOccurred:"⚠️ Error occurred:" },
+  ta: { newchat:"புதிய அரட்டை", recent:"சமீபத்திய அரட்டைகள்", settings:"அமைப்புகள்", admintitle:"உரிமையாளர் அங்கீகாரம்", adminsub:"கட்டுப்படுத்தப்பட்ட அணுகல்", loginbtn:"உள்நுழைய", cancel:"ரத்து செய்",
+    settingstitle:"அமைப்புகள்", langlabel:"மொழி", displayname:"காட்சி பெயர்", savebtn:"சேமி", close:"மூடு",
+    welcome:"வணக்கம்! நான் Sathi AI, Viruna Randinu என்பவரால் உருவாக்கப்பட்டேன். இன்று உங்களுக்கு எப்படி உதவ முடியும்? ✨",
+    placeholder:"Sathi AI யிடம் கேளுங்கள்...", ownerMode:"உரிமையாளர் முறை செயலில்", logout:"வெளியேறு", wrongCreds:"தவறான தகவல்கள்! நீங்கள் உண்மையான உரிமையாளர் இல்லை என்றால் வெளியேறவும்.",
+    networkErr:"⚠️ பிணைய பிழை. இணைப்பு துண்டிக்கப்பட்டது.", errOccurred:"⚠️ பிழை ஏற்பட்டது:" },
+  sg: { newchat:"New chat", recent:"Recent Chats", settings:"Settings", admintitle:"Owner Login", adminsub:"Restricted access", loginbtn:"Login", cancel:"Cancel",
+    settingstitle:"Settings", langlabel:"Language", displayname:"Display name", savebtn:"Save", close:"Close",
+    welcome:"Ayubowan! Mama Sathi AI. Mawa hadanne Viruna Randinu. Ada mama oyata kohomada help karanne? ✨",
+    placeholder:"Sathi AI gen ahanna...", ownerMode:"Owner Mode Active", logout:"Logout", wrongCreds:"Wrong details! If oya owner nemei nam please ivath wenna.",
+    networkErr:"⚠️ Network error wuna. Connection nathiwuna.", errOccurred:"⚠️ Error ekak una:" }
+};
+let currentLang = localStorage.getItem("sathi_lang") || "si";
+
+function applyLanguage(){
+  const s = STRINGS[currentLang];
+  document.getElementById("t-newchat").textContent = s.newchat;
+  document.getElementById("t-recent").textContent = s.recent;
+  document.getElementById("t-settings").textContent = s.settings;
+  document.getElementById("t-admintitle").textContent = s.admintitle;
+  document.getElementById("t-adminsub").textContent = s.adminsub;
+  document.getElementById("t-loginbtn").textContent = s.loginbtn;
+  document.getElementById("t-cancel").textContent = s.cancel;
+  document.getElementById("t-settingstitle").textContent = s.settingstitle;
+  document.getElementById("t-langlabel").textContent = s.langlabel;
+  document.getElementById("t-displayname").textContent = s.displayname;
+  document.getElementById("t-savebtn").textContent = s.savebtn;
+  document.getElementById("t-close").textContent = s.close;
+  document.getElementById("userInput").placeholder = s.placeholder;
+  document.querySelectorAll(".lang-pill").forEach(p=>p.classList.toggle("active", p.dataset.lang===currentLang));
+  updateAuthUI();
+}
+function setLanguage(lang){
+  currentLang = lang;
+  localStorage.setItem("sathi_lang", lang);
+  applyLanguage();
+}
+
+// ===================== State =====================
+const CLOUDFLARE_API_URL = "/api/chat";
+let chatSessions = JSON.parse(localStorage.getItem("sathi_chat_sessions")) || [];
+let activeChatId = localStorage.getItem("sathi_active_chat_id") || null;
+let isOwnerLoggedIn = JSON.parse(localStorage.getItem("sathi_is_owner")) || false;
+let displayName = localStorage.getItem("sathi_display_name") || "Viruna";
+
+// ===================== Secret key sequence for admin panel =====================
+// Type the letters "admin" anywhere on the page (not in an input field) to open the owner login modal.
+const SECRET_SEQUENCE = "admin";
+let typedBuffer = "";
+document.addEventListener("keydown", function(e){
+  const active = document.activeElement;
+  const isTyping = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+  if (isTyping) return;
+  if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+    typedBuffer += e.key.toLowerCase();
+    if (typedBuffer.length > SECRET_SEQUENCE.length) {
+      typedBuffer = typedBuffer.slice(-SECRET_SEQUENCE.length);
+    }
+    if (typedBuffer === SECRET_SEQUENCE) {
+      openLoginModal();
+      typedBuffer = "";
+    }
+  }
+});
+
+window.onload = function(){
+  applyLanguage();
+  updateAuthUI();
+  renderSidebar();
+  if (chatSessions.length === 0) {
+    startNewChat();
+  } else {
+    if (!activeChatId) activeChatId = chatSessions[0].id;
+    loadChatSession(activeChatId);
+  }
+};
+
+function startNewChat(){
+  const newSession = { id:"chat_"+Date.now(), title:"New Chat", messages:[] };
+  chatSessions.unshift(newSession);
+  activeChatId = newSession.id;
+  saveState(); renderSidebar(); loadChatSession(activeChatId);
+}
+
+function loadChatSession(id){
+  activeChatId = id;
+  localStorage.setItem("sathi_active_chat_id", id);
+  document.querySelectorAll('.history-item').forEach(item=>{
+    item.classList.toggle('active', item.dataset.id === id);
+  });
+  const currentChat = chatSessions.find(c=>c.id===id);
+  const container = document.getElementById("chatContainer");
+  container.innerHTML = "";
+  if (!currentChat || currentChat.messages.length === 0){
+    container.innerHTML = `
+      <div class="chat-row ai-row">
+        <div class="avatar ai-avatar"><span class="material-icons-outlined" style="font-size:20px;">auto_awesome</span></div>
+        <div class="message-content"><div class="message-text-block">${STRINGS[currentLang].welcome}</div></div>
+      </div>`;
+    return;
+  }
+  currentChat.messages.forEach(msg=>renderMessageUI(msg.role, msg.text));
+  scrollToBottom();
+}
+
+function deleteChat(id, event){
+  event.stopPropagation();
+  chatSessions = chatSessions.filter(c=>c.id!==id);
+  if (activeChatId === id) activeChatId = chatSessions.length>0 ? chatSessions[0].id : null;
+  saveState(); renderSidebar();
+  if (activeChatId) loadChatSession(activeChatId); else startNewChat();
+}
+
+function startRename(id, event){
+  event.stopPropagation();
+  const item = document.querySelector(`.history-item[data-id="${id}"]`);
+  const chat = chatSessions.find(c=>c.id===id);
+  const titleSpan = item.querySelector(".title");
+  const input = document.createElement("input");
+  input.className = "rename-input";
+  input.value = chat.title;
+  titleSpan.replaceWith(input);
+  input.focus();
+  input.select();
+  function commit(){
+    const val = input.value.trim() || chat.title;
+    chat.title = val;
+    saveState();
+    renderSidebar();
+  }
+  input.addEventListener("blur", commit);
+  input.addEventListener("keydown", e=>{
+    if (e.key === "Enter") input.blur();
+    if (e.key === "Escape") { input.value = chat.title; input.blur(); }
+  });
+  input.addEventListener("click", e=>e.stopPropagation());
+}
+
+function renderSidebar(){
+  const listContainer = document.getElementById("chatList");
+  listContainer.innerHTML = "";
+  chatSessions.forEach(chat=>{
+    const isActive = chat.id === activeChatId ? "active" : "";
+    const item = document.createElement("div");
+    item.className = `history-item ${isActive}`;
+    item.dataset.id = chat.id;
+    item.onclick = ()=>loadChatSession(chat.id);
+    item.innerHTML = `
+      <span class="material-icons-outlined" style="font-size:17px;color:var(--text-dim);">chat_bubble_outline</span>
+      <span class="title">${chat.title}</span>
+      <button class="icon-btn" onclick="startRename('${chat.id}', event)" title="Rename"><span class="material-icons-outlined" style="font-size:15px;">edit</span></button>
+      <button class="icon-btn delete" onclick="deleteChat('${chat.id}', event)" title="Delete"><span class="material-icons-outlined" style="font-size:15px;">delete</span></button>
+    `;
+    listContainer.appendChild(item);
+  });
+}
+
+function parseMarkdown(text){
+  if (!text) return "";
+  let escaped = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const codeBlockRegex = /```([a-zA-Z0-9_\-+]+)?\n([\s\S]*?)\n```/g;
+  escaped = escaped.replace(codeBlockRegex, (match, lang, code)=>{
+    const language = lang || 'code';
+    return `</div><div class="code-container">
+              <div class="code-header"><span>${language}</span>
+                <button class="copy-btn" onclick="copyCode(this)"><span class="material-icons-outlined" style="font-size:16px;">content_copy</span> Copy</button>
+              </div>
+              <pre><code class="code-content">${code}</code></pre>
+            </div><div class="message-text-block">`;
+  });
+  escaped = `<div class="message-text-block">${escaped}</div>`;
+  escaped = escaped.replace(/<div class="message-text-block"><\/div>/g,'');
+  escaped = escaped.replace(/`([^`]+)`/g,'<code class="inline-code">$1</code>');
+  escaped = escaped.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  return escaped;
+}
+
+function copyCode(button){
+  const container = button.closest('.code-container');
+  const codeText = container.querySelector('.code-content').innerText;
+  navigator.clipboard.writeText(codeText).then(()=>{
+    button.innerHTML = `<span class="material-icons-outlined" style="font-size:16px;">done</span> Copied!`;
+    setTimeout(()=>{ button.innerHTML = `<span class="material-icons-outlined" style="font-size:16px;">content_copy</span> Copy`; }, 2000);
+  });
+}
+
+function renderMessageUI(role, text){
+  const container = document.getElementById("chatContainer");
+  const row = document.createElement("div");
+  row.className = `chat-row ${role==='user'?'user-row':'ai-row'}`;
+  if (role === 'user'){
+    const initial = isOwnerLoggedIn ? displayName.charAt(0).toUpperCase() : "U";
+    row.innerHTML = `<div class="avatar user-avatar">${initial}</div><div class="message-content"><div class="message-text-block">${text}</div></div>`;
+  } else {
+    const htmlOutput = parseMarkdown(text);
+    row.innerHTML = `<div class="avatar ai-avatar"><span class="material-icons-outlined" style="font-size:20px;">auto_awesome</span></div><div class="message-content">${htmlOutput}</div>`;
+  }
+  container.appendChild(row);
+}
+
+async function sendMessage(){
+  const inputField = document.getElementById("userInput");
+  const prompt = inputField.value.trim();
+  if (!prompt) return;
+  const currentChat = chatSessions.find(c=>c.id===activeChatId);
+  if (!currentChat) return;
+
+  if (currentChat.messages.length === 0){
+    currentChat.title = prompt.length>24 ? prompt.substring(0,24)+"..." : prompt;
+    renderSidebar();
+  }
+  currentChat.messages.push({role:"user", text:prompt});
+  renderMessageUI("user", prompt);
+  inputField.value = "";
+  saveState(); scrollToBottom();
+
+  const container = document.getElementById("chatContainer");
+  const loadingRow = document.createElement("div");
+  loadingRow.className = "chat-row ai-row";
+  loadingRow.innerHTML = `
+    <div class="avatar ai-avatar"><span class="material-icons-outlined" style="font-size:20px;">auto_awesome</span></div>
+    <div class="message-content"><div class="loading-stars"><div class="star"></div><div class="star"></div><div class="star"></div></div></div>`;
+  container.appendChild(loadingRow);
+  scrollToBottom();
+
+  const historyPayload = currentChat.messages.map(msg=>({
+    role: msg.role==="user" ? "user" : "model",
+    parts: [{text: msg.text}]
+  }));
+
+  try {
+    const response = await fetch(CLOUDFLARE_API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ historyPayload, isOwnerLoggedIn, lang: currentLang })
+    });
+    const data = await response.json();
+    loadingRow.remove();
+    if (data.reply){
+      currentChat.messages.push({role:"model", text:data.reply});
+      renderMessageUI("model", data.reply);
+      saveState();
+    } else if (data.error){
+      renderMessageUI("model", `${STRINGS[currentLang].errOccurred} ${data.error}`);
+    }
+    scrollToBottom();
+  } catch(err){
+    loadingRow.remove();
+    renderMessageUI("model", STRINGS[currentLang].networkErr);
+    scrollToBottom();
+  }
+}
+
+// ===================== Admin login (opened only via secret key sequence) =====================
+function openLoginModal(){ document.getElementById("loginModal").classList.add("active"); document.getElementById("usernameInput").focus(); }
+function closeLoginModal(){ document.getElementById("loginModal").classList.remove("active"); }
+
+function handleLogin(){
+  const user = document.getElementById("usernameInput").value.trim();
+  const pass = document.getElementById("passwordInput").value.trim();
+  if (user === "Viruna" && pass === "123"){
+    isOwnerLoggedIn = true;
+    displayName = user;
+    localStorage.setItem("sathi_is_owner", true);
+    localStorage.setItem("sathi_display_name", displayName);
+    closeLoginModal();
+    updateAuthUI();
+    document.getElementById("usernameInput").value = "";
+    document.getElementById("passwordInput").value = "";
+    loadChatSession(activeChatId);
+  } else {
+    alert(STRINGS[currentLang].wrongCreds);
+  }
+}
+
+function handleLogout(){
+  isOwnerLoggedIn = false;
+  localStorage.setItem("sathi_is_owner", false);
+  updateAuthUI();
+  loadChatSession(activeChatId);
+}
+
+function updateAuthUI(){
+  const authArea = document.getElementById("authArea");
+  const s = STRINGS[currentLang];
+  if (isOwnerLoggedIn){
+    authArea.innerHTML = `
+      <div class="owner-badge"><span class="material-icons-outlined" style="font-size:16px;">workspace_premium</span> ${s.ownerMode}</div>
+      <button class="icon-only-btn" onclick="handleLogout()" title="${s.logout}"><span class="material-icons-outlined" style="font-size:18px;">logout</span></button>
+    `;
+  } else {
+    authArea.innerHTML = "";
+  }
+}
+
+// ===================== Settings modal =====================
+function openSettingsModal(){
+  document.getElementById("settingsModal").classList.add("active");
+  document.getElementById("ownerSettingsRow").style.display = isOwnerLoggedIn ? "flex" : "none";
+  document.getElementById("displayNameInput").value = displayName;
+}
+function closeSettingsModal(){ document.getElementById("settingsModal").classList.remove("active"); }
+function saveSettings(){
+  if (isOwnerLoggedIn){
+    const val = document.getElementById("displayNameInput").value.trim();
+    if (val){ displayName = val; localStorage.setItem("sathi_display_name", displayName); }
+  }
+  closeSettingsModal();
+  loadChatSession(activeChatId);
+}
+
+function saveState(){
+  localStorage.setItem("sathi_chat_sessions", JSON.stringify(chatSessions));
+  localStorage.setItem("sathi_active_chat_id", activeChatId);
+}
+function scrollToBottom(){
+  const container = document.getElementById("chatContainer");
+  container.scrollTop = container.scrollHeight;
+}
+function checkEnter(event){ if (event.key === "Enter") sendMessage(); }
+function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); }
+</script>
+</body>
+</html>
