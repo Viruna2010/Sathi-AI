@@ -106,7 +106,6 @@
 <body>
 
     <div class="app-container">
-        <!-- Sidebar: Chat History List -->
         <aside id="sidebar">
             <button class="new-chat-btn" onclick="startNewChat()">
                 <span class="material-icons-outlined">add</span> New chat
@@ -115,7 +114,6 @@
             <div class="history-section" id="chatList"></div>
         </aside>
 
-        <!-- Main Workspace -->
         <main>
             <header>
                 <div style="display: flex; align-items: center;">
@@ -125,18 +123,11 @@
                         Sathi AI
                     </div>
                 </div>
-                <!-- Authentication Status Button -->
-                <div class="auth-status" id="authArea">
-                    <button class="login-btn" onclick="openLoginModal()">
-                        <span class="material-icons-outlined" style="font-size: 18px;">admin_panel_settings</span> Owner Login
-                    </button>
-                </div>
+                <div class="auth-status" id="authArea"></div>
             </header>
 
-            <!-- Chat Content Container -->
             <div class="chat-container" id="chatContainer"></div>
 
-            <!-- Footer Message Input Container -->
             <div class="footer-container">
                 <div class="input-wrapper">
                     <input type="text" id="userInput" placeholder="Ask Sathi AI..." onkeypress="checkEnter(event)">
@@ -148,7 +139,6 @@
         </main>
     </div>
 
-    <!-- Login Modal Grid View Overlay -->
     <div class="modal-overlay" id="loginModal">
         <div class="login-card">
             <h3>Owner Authentication</h3>
@@ -160,22 +150,13 @@
     </div>
 
     <script>
-        // API Configurations 
-        const API_KEY = "AQ.Ab8RN6LDbYkWlnB1P0lD7--QEmrsvm9vAp9_jif31PXP0fSuhg";
-        const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${API_KEY}`;
+        // API_KEY මෙතන නෑ! Cloudflare Function එකට කතා කරන්නේ මෙතනින්.
+        const CLOUDFLARE_API_URL = "/api/chat";
 
         // Global State variables
         let chatSessions = JSON.parse(localStorage.getItem("sathi_chat_sessions")) || [];
         let activeChatId = localStorage.getItem("sathi_active_chat_id") || null;
         let isOwnerLoggedIn = JSON.parse(localStorage.getItem("sathi_is_owner")) || false;
-
-        // Custom System Engine Base Architecture
-        const BASE_SYSTEM_INSTRUCTION = `
-        Your name is Sathi AI. You are a highly professional, polite, yet energetic and intelligent companion.
-        1. FORMATTING: When generating code blocks, you MUST wrap them inside standard triple backticks markdown (e.g. \`\`\`html [code] \`\`\`). Always format lists and titles elegantly.
-        2. LANGUAGE: You are fully bilingual in Sinhala and English. Match the conversation context flawlessly.
-        3. DESIGN IDENTITY: You operate under Google Gemini design principles. Be insightful, concise, and smart.
-        `;
 
         // Run on Initial Launch
         window.onload = function() {
@@ -188,15 +169,6 @@
                 loadChatSession(activeChatId);
             }
         };
-
-        // System Instruction Engine Context Generator
-        function getSystemInstruction() {
-            if (isOwnerLoggedIn) {
-                return BASE_SYSTEM_INSTRUCTION + `\nCRITICAL CONTEXT: The user currently interacting with you is your supreme creator and developer, "Viruna Randinu". He has successfully logged in securely as the authenticated Owner. Address him respectfully as 'Viruna' or 'Viruna මචං' if speaking in Sinhala, maintain a hyper-intelligent tone, and acknowledge his position as your absolute developer in answers.`;
-            } else {
-                return BASE_SYSTEM_INSTRUCTION + `\nCONTEXT: The current user is a guest. If they ask about your developer, inform them with highest respect that you were designed and created by the legendary developer "Viruna Randinu".`;
-            }
-        }
 
         // Chat Management: Start New Session
         function startNewChat() {
@@ -247,7 +219,7 @@
 
         // Chat Management: Delete Session
         function deleteChat(id, event) {
-            event.stopPropagation(); // Stop trigger active load
+            event.stopPropagation();
             chatSessions = chatSessions.filter(c => c.id !== id);
             if (activeChatId === id) {
                 activeChatId = chatSessions.length > 0 ? chatSessions[0].id : null;
@@ -282,7 +254,7 @@
             });
         }
 
-        // Advanced Custom RegEx Markdown Syntax Engine (Supports Custom HTML Code Blocks)
+        // Advanced Custom RegEx Markdown Syntax Engine
         function parseMarkdown(text) {
             if (!text) return "";
             
@@ -351,11 +323,9 @@
             const prompt = inputField.value.trim();
             if (!prompt) return;
 
-            // Append into Active state memory
             const currentChat = chatSessions.find(c => c.id === activeChatId);
             if (!currentChat) return;
 
-            // Generate intelligent title automatically if first message
             if (currentChat.messages.length === 0) {
                 currentChat.title = prompt.length > 24 ? prompt.substring(0, 24) + "..." : prompt;
                 renderSidebar();
@@ -367,7 +337,6 @@
             saveState();
             scrollToBottom();
 
-            // Setup Animated Loading Stars
             const container = document.getElementById("chatContainer");
             const loadingRow = document.createElement("div");
             loadingRow.className = "chat-row ai-row";
@@ -379,8 +348,6 @@
             container.appendChild(loadingRow);
             scrollToBottom();
 
-            // Memory Builder: Construct Context History payload arrays mapping for Gemini API 
-            // මෙයින් AI එකට කලින් කතා කරපු සියලුම මැසේජ් මතක හිටිනවා
             const historyPayload = currentChat.messages.map(msg => {
                 return {
                     role: msg.role === "user" ? "user" : "model",
@@ -389,25 +356,25 @@
             });
 
             try {
-                const response = await fetch(URL, {
+                // යවන්නේ අපේ Cloudflare Backend එකට විතරයි! 
+                const response = await fetch(CLOUDFLARE_API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        systemInstruction: { parts: [{ text: getSystemInstruction() }] },
-                        contents: historyPayload // Pass entire formatted historical data array here
+                        historyPayload: historyPayload,
+                        isOwnerLoggedIn: isOwnerLoggedIn // Backend එකට අයිතිකරු ද කියලා යවනවා
                     })
                 });
 
                 const data = await response.json();
                 loadingRow.remove();
 
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    let aiText = data.candidates[0].content.parts[0].text;
-                    currentChat.messages.push({ role: "model", text: aiText });
-                    renderMessageUI("model", aiText);
+                if (data.reply) {
+                    currentChat.messages.push({ role: "model", text: data.reply });
+                    renderMessageUI("model", data.reply);
                     saveState();
                 } else if (data.error) {
-                    renderMessageUI("model", `⚠️ Error Occurred: ${data.error.message}`);
+                    renderMessageUI("model", `⚠️ Error Occurred: ${data.error}`);
                 }
                 scrollToBottom();
             } catch (error) {
@@ -425,19 +392,15 @@
             const user = document.getElementById("usernameInput").value.trim();
             const pass = document.getElementById("passwordInput").value.trim();
 
-            // Owner credentials setup 
-            // Username එක "Viruna" සහ Password එක "123" ලෙස සකසා ඇත (ඔයාට ඕනනම් වෙනස් කරන්න)
             if (user === "Viruna" && pass === "123") {
                 isOwnerLoggedIn = true;
                 localStorage.setItem("sathi_is_owner", true);
                 closeLoginModal();
                 updateAuthUI();
                 
-                // Clear inputs
                 document.getElementById("usernameInput").value = "";
                 document.getElementById("passwordInput").value = "";
                 
-                // Reload current screen to update interface
                 loadChatSession(activeChatId);
             } else {
                 alert("වැරදි දත්ත! ඔබ සත්‍ය අයිතිකරු නොවේ නම් කරුණාකර ඉවත් වන්න.");
