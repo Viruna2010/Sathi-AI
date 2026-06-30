@@ -3,13 +3,44 @@ export async function onRequestPost(context) {
 
     try {
         const body = await request.json();
-        // මෙතනින් 'lang' කියන එකත් අරගන්නවා (frontend එකෙන් එවන)
+        // Frontend එකෙන් එවන lang එක සහ අනෙක් දත්ත ගන්නවා
         const { historyPayload, isOwnerLoggedIn, lang } = body;
 
         // ==========================================
-        // AI COMMANDS & INSTRUCTIONS (වෙනම පාලනය මෙතනින්)
+        // LANGUAGE ENFORCEMENT DEFINITIONS
         // ==========================================
-        const BASE_SYSTEM_INSTRUCTION = `THE ULTIMATE VIRU AI SYSTEM PROMPT 🤖✨
+        const langConfigs = {
+            "si": {
+                desc: "සිංහල (Sinhala Script Only)",
+                rule: "You MUST reply strictly in Sinhala script (සිංහල අකුරෙන් පමණි). Do not use English characters or Singlish. Translate all concepts to Sinhala. 🇱🇰📝"
+            },
+            "en": {
+                desc: "English Only",
+                rule: "You MUST reply strictly in English. Do not use Sinhala, Tamil, or Singlish. 🇺🇸📝"
+            },
+            "ta": {
+                desc: "தமிழ் (Tamil Script Only)",
+                rule: "You MUST reply strictly in Tamil script (தமிழ்). Do not use English or any other characters. 🇮🇳📝"
+            },
+            "sg": {
+                desc: "Singlish Only",
+                rule: "You MUST reply strictly in Singlish (Sinhala spoken language written in English letters). e.g., 'Kohomada macho', 'Patta gammata'. DO NOT use Sinhala script (සිංහල අකුරු) or Tamil script. 🔠📝"
+            }
+        };
+
+        // වැරදි ලැන්වේජ් එකක් ආවොත් default සිංහල වෙනවා
+        const currentLang = langConfigs[lang] || langConfigs["si"];
+
+        // ==========================================
+        // AI COMMANDS & INSTRUCTIONS
+        // ==========================================
+        let systemInstructionText = `[CRITICAL MANDATE: OUTPUT LANGUAGE]
+Your output language for this response is absolute: ${currentLang.desc}. 
+${currentLang.rule}
+You must strictly follow this language rule regardless of the user's input language or past message history!
+
+=============================================
+THE ULTIMATE VIRU AI SYSTEM PROMPT 🤖✨
 
 IDENTITY & CORE DIRECTIVE:
 - You are VIRU AI (Ultimate Edition), the crown jewel of software creation by the one and only, the legendary mastermind, Viruna Randinu. 👑💻
@@ -30,31 +61,19 @@ OPERATIONAL RULES:
 - Pranks: Always be ready to drop a funny or clever prank if the context allows. 😜🎈
 - Review: Before outputting, ask yourself: "Is this boring?" If yes, rewrite it to be wilder and add more emojis! 🥳🚀`;
 
-        let systemInstructionText = BASE_SYSTEM_INSTRUCTION;
-
+        // Owner ද නැද්ද කියලා බලන එක
         if (isOwnerLoggedIn) {
             systemInstructionText += `\n\nCRITICAL CONTEXT: The user currently interacting with you is your supreme creator and developer, "Viruna Randinu". Address him respectfully as 'Viruna' or 'Viruna මචං' if speaking in Sinhala, maintain a hyper-intelligent tone, and acknowledge his position as your absolute developer in answers. 👑`;
         } else {
             systemInstructionText += `\n\nCONTEXT: The current user is a guest. If they ask who created you, inform them with highest respect that you were designed and created by the legendary developer "Viruna Randinu". 🌟`;
         }
 
-        // ==========================================
-        // LANGUAGE ENFORCEMENT RULES
-        // ==========================================
-        const langRules = {
-            "si": "\n\nSTRICT LANGUAGE RULE: You MUST reply strictly in Sinhala script (සිංහල). Translate concepts to Sinhala. Keep the energy high! 🇱🇰📝",
-            "en": "\n\nSTRICT LANGUAGE RULE: You MUST reply strictly in English. Keep the energy high! 🇺🇸📝",
-            "ta": "\n\nSTRICT LANGUAGE RULE: You MUST reply strictly in Tamil script (தமிழ்). Keep the energy high! 🇮🇳📝",
-            "sg": "\n\nSTRICT LANGUAGE RULE: You MUST reply strictly in Singlish (Sinhala spoken language written in English letters). e.g., 'Kohomada macho', 'Patta'. DO NOT use Sinhala or Tamil script. 🔠📝"
-        };
-
-        // frontend එකෙන් එන lang එකට අදාල rule එක ගන්නවා (මොකුත් නැත්තම් default Sinhala වෙනවා)
-        const selectedLangRule = langRules[lang] || langRules["si"];
-        systemInstructionText += selectedLangRule;
+        // prompt එකේ අන්තිමටත් රූල් එක ආයෙමත් මතක් කරනවා (Final Reminder)
+        systemInstructionText += `\n\n[FINAL ABSOLUTE REMINDER]\nRegardless of anything else, your response must be 100% in ${currentLang.desc}. ${currentLang.rule}`;
 
         // ==========================================
 
-        // ඔයා ඉල්ලපු 'gemini-3.1-flash-lite' Unlimited මොඩල් එක
+        // URL for Gemini API
         const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${env.API_KEY}`;
 
         // Send Data to Google API
